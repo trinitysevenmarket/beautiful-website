@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Anchor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-text: #2c3e50; /* Deep blue/gray */
+            --card-bg: #ffffff; /* White card background */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background 0.5s ease-in-out;
+        }
+        
+        /* Neumorphic Shadow for a simple card */
+        .affirmation-card {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            box-shadow: 10px 10px 20px #d0d0d0, -10px -10px 20px #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        /* Gradient for the main display text (the Affirmation) */
+        .affirmation-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: black; /* Fallback */
+            transition: background 0.7s ease-in-out;
+            text-align: center;
+        }
+
+        /* Helper class for changing the background color of the category indicator */
+        .category-gradient-bg {
+            transition: background 0.7s ease-in-out;
+        }
+
+        .refresh-button {
+            border-radius: 9999px;
+            box-shadow: 5px 5px 10px #d0d0d0, -5px -5px 10px #ffffff;
+            transition: all 0.2s ease-in-out;
+            color: var(--primary-text);
+        }
+        
+        .refresh-button:hover {
+            box-shadow: 2px 2px 5px #d0d0d0, -2px -2px 5px #ffffff;
+            transform: scale(0.98);
+        }
+
+        .refresh-button:active {
+            box-shadow: inset 2px 2px 5px #d0d0d0, inset -2px -2px 5px #ffffff;
+            transform: scale(0.95);
+        }
+
+        /* Styling for the copy message (toast/snackbar replacement) */
+        #copy-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: #2c3e50; /* Primary Text Color */
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.875rem; /* text-sm */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+        }
+
+        #copy-message.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+
+    <!-- Main Affirmation Container -->
+    <div id="affirmation-card" class="affirmation-card p-12 md:p-16 w-full max-w-xl text-center">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-center space-x-3 mb-2">
+            <!-- Anchor Icon SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-800">
+                <path d="M12 22V8"/>
+                <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+                <path d="M12 22v-4"/>
+                <circle cx="12" cy="5" r="3"/>
+            </svg>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">
+                The Anchor
+            </h1>
+        </div>
+        
+        <!-- Category/Theme Indicator (mb-4 instead of mb-8) -->
+        <p id="category-indicator" 
+           class="text-xs md:text-sm font-semibold text-white px-3 py-1 rounded-full inline-block mb-4 category-gradient-bg">
+            Loading Theme...
+        </p>
+
+        <!-- Affirmation Text Display (Affirmation + Verse/Source) -->
+        <div id="affirmation-container" class="min-h-[150px] flex flex-col items-center justify-center pt-2 cursor-pointer" onclick="copyAffirmation()">
+            
+            <!-- 1. The Main Affirmation (I am/I choose statement) -->
+            <p id="affirmation-text" 
+               class="affirmation-gradient text-3xl md:text-5xl font-black leading-snug">
+                Loading initial affirmation...
+            </p>
+            
+            <!-- 2. The Grounding Verse and Reference (Smaller, Grey, Detailed) -->
+            <div id="affirmation-source" class="text-lg md:text-xl font-medium text-gray-500 mt-6 max-w-sm md:max-w-md transition-colors duration-500">
+                <!-- Content will be injected here -->
+                (Click affirmation to copy)
+            </div>
+            
+        </div>
+        
+        <!-- Controls -->
+        <div class="mt-12 flex flex-col items-center">
+            
+            <button id="refresh-button" 
+                    class="refresh-button px-8 py-3 bg-gray-100 font-bold text-sm tracking-widest uppercase flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.76 2.87M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.76-2.87"/>
+                    <path d="M3 4V1h3m18 3v3"/>
+                </svg>
+                <span>New Anchor</span>
+            </button>
+            
+            <p id="system-status" class="text-xs mt-4 text-gray-400">System Ready.</p>
+        </div>
+
+    </div>
+
+    <!-- Copy Message Snackbar -->
+    <div id="copy-message">Affirmation and verse copied!</div>
+
+    <script>
+        // Data structure updated to include Affirmation, Verse, and Source
+        const categories = {
+            // 1. OBSIDIAN (Guidance and Inner Strength)
+            'Obsidian (Guidance & Strength)': {
+                gradient: 'linear-gradient(135deg, #434343, #000000)',
+                anchors: [
+                    { 
+                        affirmation: "I choose to rejoice always, pray continually, and give thanks in all circumstances.", 
+                        verse: "Rejoice always, pray continually, give thanks in all circumstances; for this is God’s will for you in Christ Jesus.", 
+                        source: "1 Thessalonians 5:16-18 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I am joyful in hope, patient in affliction, and faithful in prayer.", 
+                        verse: "Be joyful in hope, patient in affliction, faithful in prayer.", 
+                        source: "Romans 12:12 (NIV)" 
+                    },
+                    { 
+                        affirmation: "The joy of the Lord is my strength.", 
+                        verse: "The joy of the Lord is your strength.", 
+                        source: "Nehemiah 8:10 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I focus my mind on things that are true, noble, right, pure, lovely, and admirable.", 
+                        verse: "Whatever is true, noble, right, pure, lovely, admirable—if anything is excellent or praiseworthy—think about such things.", 
+                        source: "Philippians 4:8 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I commit my way to the Lord, trusting that He will act on my behalf.", 
+                        verse: "Commit your way to the Lord; trust in him and he will do this.", 
+                        source: "Psalm 37:5 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I trust the Lord with all my heart and He makes my paths straight.", 
+                        verse: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", 
+                        source: "Proverbs 3:5-6 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I have a spirit of power, love, and self-control, not timidity.", 
+                        verse: "For God did not give us a spirit of timidity, but of power, love and self-control.", 
+                        source: "2 Timothy 1:7 (NIV)" 
+                    }
+                ]
+            },
+            // 2. WATER (Divine Peace)
+            'Water (Divine Peace)': {
+                gradient: 'linear-gradient(135deg, #00c9ff, #48b1bf)',
+                anchors: [
+                    { 
+                        affirmation: "I allow the Lord to refresh my soul by leading me beside still waters.", 
+                        verse: "He leads me beside still waters, he refreshes my soul.", 
+                        source: "Psalm 23:2-3 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I will not fear or be dismayed, for God is my help and strength.", 
+                        verse: "So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you.", 
+                        source: "Isaiah 41:10 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I take refuge in the goodness of the Lord.", 
+                        verse: "Taste and see that the Lord is good; blessed is the one who takes refuge in him.", 
+                        source: "Psalm 34:8 (NIV)" 
+                    },
+                    { 
+                        affirmation: "Because I believe in Jesus, streams of living water flow from within me.", 
+                        verse: "Whoever believes in me, as the Scripture has said, streams of living water will flow from within him.", 
+                        source: "John 7:38 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I receive perfect peace because my mind is steadfast and trusts in God.", 
+                        verse: "You will keep in perfect peace those whose minds are steadfast, because they trust in you.", 
+                        source: "Isaiah 26:3 (NIV)" 
+                    },
+                    { 
+                        affirmation: "When I pass through trials, God is with me and I will not be overwhelmed.", 
+                        verse: "When you pass through the waters, I will be with you; and when you pass through the rivers, they will not sweep over you.", 
+                        source: "Isaiah 43:2 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I accept the peace of Christ and refuse to let my heart be troubled or afraid.", 
+                        verse: "Peace I leave with you; my peace I give you. I do not give to you as the world gives. Do not let your hearts be troubled and do not be afraid.", 
+                        source: "John 14:27 (NIV)" 
+                    }
+                ]
+            },
+            // 3. FOREST (Faith and Perseverance)
+            'Forest (Faith & Perseverance)': {
+                gradient: 'linear-gradient(135deg, #a8ff78, #16a085)',
+                anchors: [
+                    { 
+                        affirmation: "My confidence is in the Lord, and I am like a tree planted by the water.", 
+                        verse: "Blessed is the one who trusts in the Lord, whose confidence is in him. They will be like a tree planted by the water.", 
+                        source: "Jeremiah 17:7-8 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I am a fruitful tree, planted by streams of water, whose leaf does not wither.", 
+                        verse: "They are like a tree planted by streams of water, which yields its fruit in season and whose leaf does not wither.", 
+                        source: "Psalm 1:3 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I flourish and grow strong like a cedar in Lebanon.", 
+                        verse: "The righteous flourish like the palm tree and grow like a cedar in Lebanon.", 
+                        source: "Psalm 92:12 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I walk in faith, assured of the hope I have in Christ.", 
+                        verse: "Faith is confidence in what we hope for and assurance about what we do not see.", 
+                        source: "Hebrews 11:1 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I can do all things through Christ who gives me strength.", 
+                        verse: "I can do all this through him who gives me strength.", 
+                        source: "Philippians 4:13 (NIV)" 
+                    },
+                    { 
+                        affirmation: "My strength is renewed in the Lord; I run and do not grow weary.", 
+                        verse: "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.", 
+                        source: "Isaiah 40:31 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I live wisely, making the most of every opportunity.", 
+                        verse: "Be very careful, then, how you live—not as unwise but as wise, making the most of every opportunity, because the days are evil.", 
+                        source: "Ephesians 5:15-16 (NIV)" 
+                    }
+                ]
+            },
+            // 4. STONE (Rock and Refuge)
+            'Stone (Rock & Refuge)': {
+                gradient: 'linear-gradient(135deg, #a9a9a9, #5d4a46)',
+                anchors: [
+                    { 
+                        affirmation: "I take refuge in the Lord, for He is my rock, my fortress, and my deliverer.", 
+                        verse: "The Lord is my rock, my fortress and my deliverer; my God is my rock, in whom I take refuge.", 
+                        source: "Psalm 18:2 (NIV)" 
+                    },
+                    { 
+                        affirmation: "My life is built on the solid rock of Jesus Christ's teachings.", 
+                        verse: "Therefore everyone who hears these words of mine and puts them into practice is like a wise man who built his house on the rock.", 
+                        source: "Matthew 7:24-25 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I am transformed by the renewing of my mind, not conforming to this world.", 
+                        verse: "Do not conform to the pattern of this world, but be transformed by the renewing of your mind.", 
+                        source: "Romans 12:2 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I demolish all thoughts and arguments that oppose the truth of God.", 
+                        verse: "We demolish arguments and every pretension that sets itself up against the knowledge of God.", 
+                        source: "2 Corinthians 10:5 (NIV)" 
+                    },
+                    { 
+                        affirmation: "The Lord is my rock and salvation; I will not be shaken.", 
+                        verse: "He alone is my rock and my salvation; he is my fortress, I will not be shaken.", 
+                        source: "Psalm 62:6 (NIV)" 
+                    },
+                    { 
+                        affirmation: "The eternal God is my refuge, and I am held by His everlasting arms.", 
+                        verse: "The eternal God is your refuge, and underneath are the everlasting arms.", 
+                        source: "Deuteronomy 33:27 (NIV)" 
+                    },
+                    { 
+                        affirmation: "God is for me, therefore no one can successfully stand against me.", 
+                        verse: "If God is for us, who can be against us?", 
+                        source: "Romans 8:31 (NIV)" 
+                    }
+                ]
+            },
+            // 5. EMBER (Courage and Hope)
+            'Ember (Courage & Hope)': {
+                gradient: 'linear-gradient(135deg, #ff9966, #ff5e62)',
+                anchors: [
+                    { 
+                        affirmation: "I am strong and courageous, knowing God is with me wherever I go.", 
+                        verse: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.", 
+                        source: "Joshua 1:9 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I respect the presence of God, who is a consuming fire.", 
+                        verse: "for our 'God is a consuming fire.'", 
+                        source: "Hebrews 12:29 (NIV)" 
+                    },
+                    { 
+                        affirmation: "The Lord goes before me and will never leave or forsake me.", 
+                        verse: "The Lord himself goes before you and will be with you; he will never leave you nor forsake you.", 
+                        source: "Deuteronomy 31:8 (NIV)" 
+                    },
+                    { 
+                        affirmation: "My hope in Christ is a strong and trustworthy anchor for my soul.", 
+                        verse: "This hope is a strong and trustworthy anchor for the soul.", 
+                        source: "Hebrews 6:19 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I choose to decrease so that Christ may increase in my life.", 
+                        verse: "He must become greater; I must become less.", 
+                        source: "John 3:30 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I trust the God of hope to fill me with all joy and peace.", 
+                        verse: "May the God of hope fill you with all joy and peace as you trust in him, so that you may overflow with hope by the power of the Holy Spirit.", 
+                        source: "Romans 15:13 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I trust in the Lord and am kept safe from the snare of the fear of man.", 
+                        verse: "The fear of man will prove to be a snare, but whoever trusts in the Lord is kept safe.", 
+                        source: "Proverbs 29:25 (NIV)" 
+                    }
+                ]
+            },
+            // 6. SAND (Endurance and Faith)
+            'Sand (Endurance & Faith)': {
+                gradient: 'linear-gradient(135deg, #F9D423, #FFC72C)',
+                anchors: [
+                    { 
+                        affirmation: "I will not grow weary in doing good, knowing I will reap a harvest if I do not give up.", 
+                        verse: "Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.", 
+                        source: "Galatians 6:9 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I fix my eyes on the eternal and unseen things, not the temporary and visible.", 
+                        verse: "So we fix our eyes not on what is seen, but on what is unseen, since what is seen is temporary, but what is unseen is eternal.", 
+                        source: "2 Corinthians 4:18 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I run the race of faith with perseverance, fixing my eyes on Jesus.", 
+                        verse: "Let us run with perseverance the race marked out for us, fixing our eyes on Jesus.", 
+                        source: "Hebrews 12:1-2 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I have eternal life because I believe in the Son of God.", 
+                        verse: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.", 
+                        source: "John 3:16 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I walk by faith and not by sight.", 
+                        verse: "For we live by faith, not by sight.", 
+                        source: "2 Corinthians 5:7 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I have been saved by God’s grace through faith.", 
+                        verse: "For it is by grace you have been saved, through faith—and this is not from yourselves, it is the gift of God.", 
+                        source: "Ephesians 2:8 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I stand firm and endure to the very end.", 
+                        verse: "But the one who stands firm to the end will be saved.", 
+                        source: "Matthew 24:13 (NIV)" 
+                    }
+                ]
+            },
+            // 7. SKY (Glory and Provision)
+            'Sky (Glory & Provision)': {
+                gradient: 'linear-gradient(135deg, #c3e0ff, #7f8cfc)',
+                anchors: [
+                    { 
+                        affirmation: "I recognize that the heavens declare the glory of God.", 
+                        verse: "The heavens declare the glory of God; the skies proclaim the work of his hands.", 
+                        source: "Psalm 19:1 (NIV)" 
+                    },
+                    { 
+                        affirmation: "My help comes from the Lord, the Maker of heaven and earth.", 
+                        verse: "I lift up my eyes to the mountains—where does my help come from? My help comes from the Lord, the Maker of heaven and earth.", 
+                        source: "Psalm 121:1-2 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I believe that everything is possible because I believe in Christ.", 
+                        verse: "Everything is possible for one who believes.", 
+                        source: "Mark 9:23 (NIV)" 
+                    },
+                    { 
+                        affirmation: "God has plans for me to prosper, to give me hope and a future.", 
+                        verse: "“For I know the plans I have for you,” declares the Lord, “plans to prosper you and not to harm you, plans to give you hope and a future.”", 
+                        source: "Jeremiah 29:11 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I look up with expectation because my redemption is drawing near.", 
+                        verse: "When these things begin to take place, stand up and lift up your heads, because your redemption is drawing near.", 
+                        source: "Luke 21:28 (NIV)" 
+                    },
+                    { 
+                        affirmation: "I call to God, and He will answer and tell me great and unsearchable things.", 
+                        verse: "Call to me and I will answer you and tell you great and unsearchable things you do not know.", 
+                        source: "Jeremiah 33:3 (NIV)" 
+                    },
+                    { 
+                        affirmation: "The Lord's mercy is new every morning, and great is His faithfulness.", 
+                        verse: "The steadfast love of the Lord never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness.", 
+                        source: "Lamentations 3:22-23 (ESV)" 
+                    }
+                ]
+            }
+        };
+
+        const categoryKeys = Object.keys(categories);
+        const affirmationTextElement = document.getElementById('affirmation-text');
+        const affirmationSourceElement = document.getElementById('affirmation-source'); // This now holds the Verse + Source
+        const refreshButton = document.getElementById('refresh-button');
+        const categoryIndicatorElement = document.getElementById('category-indicator');
+        const systemStatus = document.getElementById('system-status');
+        const copyMessage = document.getElementById('copy-message');
+        
+        let lastCategoryKey = null;
+        
+        /**
+         * Gets a random category key, ensuring it's not the same as the last one displayed.
+         */
+        function getRandomCategoryKey(keys, lastKey) {
+            let newKey;
+            if (keys.length <= 1) return keys[0];
+            do {
+                newKey = keys[Math.floor(Math.random() * keys.length)];
+            } while (newKey === lastKey);
+            return newKey;
+        }
+
+        /**
+         * Displays a new random affirmation/anchor.
+         */
+        function displayRandomAffirmation() {
+            refreshButton.disabled = true;
+            systemStatus.textContent = 'PROTOCOL INITIATED...';
+            
+            const categoryKey = getRandomCategoryKey(categoryKeys, lastCategoryKey);
+            lastCategoryKey = categoryKey;
+            
+            const category = categories[categoryKey];
+            const anchorIndex = Math.floor(Math.random() * category.anchors.length);
+            const anchor = category.anchors[anchorIndex]; // Get the object containing affirmation, verse, and source
+            
+            // 1. Update the Main Affirmation Text (Large, Gradient)
+            affirmationTextElement.textContent = anchor.affirmation;
+            
+            // 2. Update the Grounding Verse and Source (Small, Grey)
+            affirmationSourceElement.innerHTML = `
+                <span class="block text-sm md:text-base italic leading-relaxed text-gray-500">
+                    "${anchor.verse}"
+                </span>
+                <span class="block text-xs md:text-sm font-bold mt-2 text-gray-400">
+                    — ${anchor.source}
+                </span>
+            `;
+
+            // Apply gradients
+            affirmationTextElement.style.backgroundImage = category.gradient;
+            categoryIndicatorElement.style.backgroundImage = category.gradient;
+            categoryIndicatorElement.textContent = categoryKey.toUpperCase();
+                
+            // Update status
+            systemStatus.textContent = 'ANCHOR ESTABLISHED. Click affirmation to copy.';
+            
+            // Re-enable the button
+            setTimeout(() => {
+                refreshButton.disabled = false;
+            }, 50); 
+        }
+
+        /**
+         * Copies the current affirmation text (affirmation + verse + source) to the clipboard.
+         */
+        function copyAffirmation() {
+            const affirmation = affirmationTextElement.textContent.trim();
+            const verse = affirmationSourceElement.querySelector('span:first-child').textContent.trim().replace(/"/g, '');
+            const source = affirmationSourceElement.querySelector('span:last-child').textContent.trim().replace(/— /g, '');
+            
+            // Format the text to copy
+            const textToCopy = `Affirmation:\n${affirmation}\n\n${verse} (${source})`;
+            
+            // Use execCommand('copy') for compatibility in environments like iframes
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.position = 'fixed'; 
+            tempTextArea.style.top = '0';
+            tempTextArea.style.left = '0';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.focus();
+            tempTextArea.select();
+
+            try {
+                document.execCommand('copy');
+                
+                // Show copy success message
+                copyMessage.classList.add('show');
+                setTimeout(() => {
+                    copyMessage.classList.remove('show');
+                }, 2000);
+
+                systemStatus.textContent = 'AFFIRMATION COPIED TO CLIPBOARD.';
+
+            } catch (err) {
+                console.error('Could not copy text: ', err);
+                systemStatus.textContent = 'Copy failed. Try selecting text manually.';
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+
+        // Event listeners
+        refreshButton.addEventListener('click', displayRandomAffirmation);
+
+        // Initial load
+        window.onload = () => {
+            displayRandomAffirmation();
+        };
+
+    </script>
+</body>
+</html>
