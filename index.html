@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Anchor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-text: #2c3e50; /* Deep blue/gray */
+            --card-bg: #ffffff; /* White card background */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background 0.5s ease-in-out;
+        }
+        
+        /* Neumorphic Shadow for a simple card */
+        .affirmation-card {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            box-shadow: 10px 10px 20px #d0d0d0, -10px -10px 20px #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        /* Gradient for the main display */
+        .affirmation-gradient {
+            /* Initial placeholder gradient defined by JS */
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: black; /* Fallback */
+            transition: background 0.7s ease-in-out;
+            cursor: pointer; /* Indicate it's clickable */
+        }
+
+        /* Helper class for changing the background color of the category indicator */
+        .category-gradient-bg {
+            transition: background 0.7s ease-in-out;
+        }
+
+        .refresh-button {
+            border-radius: 9999px;
+            box-shadow: 5px 5px 10px #d0d0d0, -5px -5px 10px #ffffff;
+            transition: all 0.2s ease-in-out;
+            color: var(--primary-text);
+        }
+        
+        .refresh-button:hover {
+            box-shadow: 2px 2px 5px #d0d0d0, -2px -2px 5px #ffffff;
+            transform: scale(0.98);
+        }
+
+        .refresh-button:active {
+            box-shadow: inset 2px 2px 5px #d0d0d0, inset -2px -2px 5px #ffffff;
+            transform: scale(0.95);
+        }
+
+        /* Styling for the copy message (toast/snackbar replacement) */
+        #copy-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: #2c3e50; /* Primary Text Color */
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.875rem; /* text-sm */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+        }
+
+        #copy-message.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+
+    <!-- Main Affirmation Container -->
+    <div id="affirmation-card" class="affirmation-card p-8 md:p-12 w-full max-w-xl text-center">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-center space-x-3 mb-2">
+            <!-- Anchor Icon SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-800">
+                <path d="M12 22V8"/>
+                <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+                <path d="M12 22v-4"/>
+                <circle cx="12" cy="5" r="3"/>
+            </svg>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-800">
+                The Anchor
+            </h1>
+        </div>
+        
+        <!-- Category/Theme Indicator -->
+        <p id="category-indicator" 
+           class="text-xs md:text-sm font-semibold text-white px-3 py-1 rounded-full inline-block mb-8 category-gradient-bg">
+            Loading Theme...
+        </p>
+
+        <!-- Affirmation Text Display (Now Clickable) -->
+        <p id="affirmation-text" 
+           class="affirmation-gradient text-2xl md:text-4xl font-black leading-snug transition-opacity duration-300 min-h-[100px] flex items-center justify-center">
+            Loading initial anchor... (Click to Copy)
+        </p>
+        
+        <!-- Controls -->
+        <div class="mt-12 flex flex-col items-center">
+            
+            <button id="refresh-button" 
+                    class="refresh-button px-8 py-3 bg-gray-100 font-bold text-sm tracking-widest uppercase flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.76 2.87M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.76-2.87"/>
+                    <path d="M3 4V1h3m18 3v3"/>
+                </svg>
+                <span>New Anchor</span>
+            </button>
+            
+            <p id="system-status" class="text-xs mt-4 text-gray-400">System Ready.</p>
+        </div>
+
+    </div>
+
+    <!-- Copy Message Snackbar -->
+    <div id="copy-message">Affirmation copied!</div>
+
+    <script>
+        // Data structure mapping categories to gradients and Christian affirmations
+        const categories = {
+            // 1. OBSIDIAN (Identity and Worth)
+            'Obsidian (Identity in Christ)': {
+                gradient: 'linear-gradient(135deg, #434343, #000000)', // Dark Gray to Black
+                verses: [
+                    "I am a child of God, fearfully and wonderfully made.",
+                    "I am deeply loved, not because of what I do, but because of who I am in Christ.",
+                    "I am forgiven and freed from condemnation.",
+                    "I have been adopted into God's family and am an heir to His kingdom.",
+                    "My worth is found in Christ, not in my achievements or failures.",
+                    "I am a new creation; the old has gone, the new has come.",
+                    "I am chosen, holy, and dearly loved.",
+                    "I am a masterpiece created for good works.",
+                    "I am not a victim of my circumstances; I am victorious through Christ.",
+                    "I belong to God, and nothing can separate me from His love.",
+                    "I am confident because my identity is secure in Jesus."
+                ]
+            },
+            // 2. WATER (Peace and Trust)
+            'Water (Divine Peace)': {
+                gradient: 'linear-gradient(135deg, #00c9ff, #48b1bf)', // Light Blue to Teal
+                verses: [
+                    "I cast all my anxieties on God because He cares for me.",
+                    "The peace of God, which transcends all understanding, guards my heart and mind.",
+                    "I trust God's plan for my life, even when I can't see the full picture.",
+                    "I rest in the knowledge that God is working all things together for my good.",
+                    "I surrender my worries and receive God's perfect peace.",
+                    "I have nothing to fear because the Lord is my helper.",
+                    "I choose to be still and know that God is God.",
+                    "I am led by the Holy Spirit into stillness and calm.",
+                    "I am protected from chaos and worry by God's presence.",
+                    "God’s peace floods my heart and calms my soul.",
+                    "I am dwelling in the quiet assurance of God's faithfulness."
+                ]
+            },
+            // 3. FOREST (Strength and Endurance)
+            'Forest (Divine Strength)': {
+                gradient: 'linear-gradient(135deg, #a8ff78, #16a085)', // Bright Green to Dark Green
+                verses: [
+                    "I can do all things through Christ who gives me strength.",
+                    "When I am weak, God's power is made perfect in me.",
+                    "God is my refuge and strength, an ever-present help in trouble.",
+                    "I am strong in the Lord and in His mighty power.",
+                    "The joy of the Lord is my strength today.",
+                    "I am armed with God's power for every battle.",
+                    "God is renewing my strength like the eagles.",
+                    "I will run and not grow weary, I will walk and not be faint.",
+                    "I rely on God's grace to sustain me through every season.",
+                    "I persevere because God finishes what He starts in me.",
+                    "My inner person is being strengthened by the Holy Spirit."
+                ]
+            },
+            // 4. STONE (Truth and Wisdom)
+            'Stone (Truth and Wisdom)': {
+                gradient: 'linear-gradient(135deg, #a9a9a9, #5d4a46)', // Light Gray to Stone Brown
+                verses: [
+                    "The Word of God is a lamp to my feet and a light to my path.",
+                    "I rely on God's wisdom, which is freely given when I ask.",
+                    "I demolish every thought that sets itself up against the knowledge of God.",
+                    "I submit my mind to Christ and embrace truth.",
+                    "My life is built on the solid rock of Jesus Christ.",
+                    "God’s truth guides my decisions and protects my mind.",
+                    "I seek first the kingdom of God, and all things will be added to me.",
+                    "I am transformed by the renewing of my mind.",
+                    "I have the mind of Christ.",
+                    "I stand firm against the lies of the enemy.",
+                    "The truth sets me free today."
+                ]
+            },
+            // 5. EMBER (Hope and Courage)
+            'Ember (Divine Hope)': {
+                gradient: 'linear-gradient(135deg, #ff9966, #ff5e62)', // Orange to Red
+                verses: [
+                    "My hope is an anchor for my soul, firm and secure.",
+                    "I am filled with all joy and peace as I trust in the God of hope.",
+                    "I look forward to an eternal future with Christ.",
+                    "I have a glorious hope that will never disappoint me.",
+                    "I am courageous because God is with me wherever I go.",
+                    "I fix my eyes on Jesus, the author and perfecter of my faith.",
+                    "I believe in the promises of God, which are always 'Yes' in Christ.",
+                    "I embrace today with renewed hope and expectation.",
+                    "God is able to do immeasurably more than all I ask or imagine.",
+                    "I will wait for the Lord; I will be strong and take heart.",
+                    "I am moving forward, empowered by the Holy Spirit."
+                ]
+            },
+            // 6. SAND (Grace and Forgiveness)
+            'Sand (Grace and Forgiveness)': {
+                gradient: 'linear-gradient(135deg, #F9D423, #FFC72C)', // Yellow to Gold
+                verses: [
+                    "I walk in God’s lavish grace, which is sufficient for me.",
+                    "I receive God's mercy, which is new every morning.",
+                    "I freely forgive others as Christ has freely forgiven me.",
+                    "I release guilt and shame, embracing the freedom of God's grace.",
+                    "There is no striving in my relationship with God; I rest in His finished work.",
+                    "I extend grace to myself, just as God extends it to me.",
+                    "I am righteous through Christ's sacrifice.",
+                    "I am not defined by my past mistakes.",
+                    "God’s love covers a multitude of sins.",
+                    "I live under an open heaven of favor and grace.",
+                    "I am a minister of reconciliation and forgiveness."
+                ]
+            },
+            // 7. SKY (Abundance and Provision)
+            'Sky (Divine Provision)': {
+                gradient: 'linear-gradient(135deg, #c3e0ff, #7f8cfc)', // Pale Blue to Lavender
+                verses: [
+                    "My God will meet all my needs according to His glorious riches in Christ Jesus.",
+                    "God is the ultimate source of all my abundance and provision.",
+                    "I live a life of generosity because I have been generously blessed.",
+                    "I am a good steward of the resources God has entrusted to me.",
+                    "I trust God to open doors that no one can shut.",
+                    "God is able to make all grace abound toward me.",
+                    "I walk in favor and blessing in all areas of my life.",
+                    "I am thankful for every blessing, big and small.",
+                    "I sow generously and will reap a generous harvest.",
+                    "I receive supernatural provision today.",
+                    "I am blessed to be a blessing to others."
+                ]
+            }
+        };
+
+        const categoryKeys = Object.keys(categories);
+        const affirmationTextElement = document.getElementById('affirmation-text');
+        const categoryIndicatorElement = document.getElementById('category-indicator');
+        const refreshButton = document.getElementById('refresh-button');
+        const systemStatus = document.getElementById('system-status');
+        const copyMessage = document.getElementById('copy-message');
+        
+        let lastCategoryKey = null;
+
+        /**
+         * Gets a random category key, ensuring it's not the same as the last one displayed.
+         * @param {Array} keys - The array of category keys.
+         * @param {string} lastKey - The key of the last displayed category.
+         * @returns {string} The new random category key.
+         */
+        function getRandomCategoryKey(keys, lastKey) {
+            let newKey;
+            if (keys.length <= 1) return keys[0];
+            do {
+                newKey = keys[Math.floor(Math.random() * keys.length)];
+            } while (newKey === lastKey);
+            return newKey;
+        }
+
+        /**
+         * Displays a new random affirmation with a smooth transition.
+         */
+        function displayRandomAffirmation() {
+            refreshButton.disabled = true;
+            systemStatus.textContent = 'PROTOCOL INITIATED...';
+            
+            const categoryKey = getRandomCategoryKey(categoryKeys, lastCategoryKey);
+            lastCategoryKey = categoryKey;
+            
+            const category = categories[categoryKey];
+            const verseIndex = Math.floor(Math.random() * category.verses.length);
+            const affirmationText = category.verses[verseIndex];
+            const affirmationGradient = category.gradient;
+
+            // 1. Fade out the text and indicator
+            affirmationTextElement.style.opacity = '0';
+            categoryIndicatorElement.style.opacity = '0';
+            
+            // 2. Change content and gradient after a short delay (for the fade out)
+            setTimeout(() => {
+                // Update text
+                affirmationTextElement.textContent = affirmationText;
+                
+                // Update gradients
+                affirmationTextElement.style.backgroundImage = affirmationGradient;
+                categoryIndicatorElement.style.backgroundImage = affirmationGradient;
+                categoryIndicatorElement.textContent = categoryKey.toUpperCase();
+                
+                // 3. Fade in the new content
+                affirmationTextElement.style.opacity = '1';
+                categoryIndicatorElement.style.opacity = '1';
+
+                // 4. Update status and enable button
+                systemStatus.textContent = 'ANCHOR ESTABLISHED. Click text to copy.';
+                refreshButton.disabled = false;
+            }, 300); // Matches CSS transition time
+        }
+
+        /**
+         * Copies the current affirmation text to the clipboard and shows a message.
+         */
+        function copyAffirmation() {
+            const textToCopy = affirmationTextElement.textContent.trim();
+            
+            // Use execCommand('copy') for compatibility in environments like iframes
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.position = 'fixed'; // Keep it off-screen
+            tempTextArea.style.top = '0';
+            tempTextArea.style.left = '0';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.focus();
+            tempTextArea.select();
+
+            try {
+                document.execCommand('copy');
+                
+                // Show copy success message
+                copyMessage.classList.add('show');
+                setTimeout(() => {
+                    copyMessage.classList.remove('show');
+                }, 2000);
+
+                systemStatus.textContent = 'COPIED TO CLIPBOARD.';
+
+            } catch (err) {
+                console.error('Could not copy text: ', err);
+                systemStatus.textContent = 'Copy failed. Try selecting text manually.';
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+
+        // Event listeners
+        refreshButton.addEventListener('click', displayRandomAffirmation);
+        affirmationTextElement.addEventListener('click', copyAffirmation);
+
+        // Initial load
+        window.onload = () => {
+            displayRandomAffirmation();
+        };
+
+    </script>
+</body>
+</html>
